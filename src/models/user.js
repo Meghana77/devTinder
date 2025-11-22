@@ -1,13 +1,23 @@
 const mongoose = require('mongoose');
 
 const User = new mongoose.Schema({
-    username : {
+~    username: {
+        type: String,
+        maxLength: 20,
+        minLength: 3
+    },
+    password: {
+        type: String,
+        maxLength: 30,
+        minLength: 6
+    },
+    email: {
         type: String
     },
-    password : {
-        type: String
+    age: {
+        type: Number
     },
-    email : {
+    gender: {
         type: String
     }
 });
