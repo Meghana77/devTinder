@@ -1,25 +1,76 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
-const User = new mongoose.Schema({
-~    username: {
-        type: String,
-        maxLength: 20,
-        minLength: 3
+const userSchema = new mongoose.Schema(
+  {
+    firstname: {
+      type: String,
+      required: true,
+      trim: true,
+      minLength: 4,
+      maxLength: 20,
+    },
+    lastname: {
+      type: String,
+      required: true,
+      trim: true,
+      minLength: 4,
+      maxLength: 20,
     },
     password: {
-        type: String,
-        maxLength: 30,
-        minLength: 6
+      type: String,
+      required: true,
+      trim: true,
+      minLength: 8,
+      maxLength: 70
     },
     email: {
-        type: String
+      type: String,
+      required: true,
+      trim: true,
+      maxLength: 40,
+      minLength: 10,
+      unique: true,
+      validate(value){
+        if(!validator.isEmail(value)){
+            throw new Error(`${value} is not a valid email`);
+        }
+      }
     },
     age: {
-        type: Number
+      type: Number,
+      min: 18,
+      required: true
     },
     gender: {
-        type: String
-    }
-});
+      type: String,
+      lowercase: true,
+      trim: true,
+      enum: {
+        values: ["male", "female", "others"],
+        message: `{VALUE} is not a valid string`
+      },
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-module.exports = mongoose.Model('users', User);
+userSchema.methods.getJWT = async function (){
+  const user = this;
+  const jwtToken = await jwt.sign({ id: user._id }, process.env.TOKEN_SECRET, {expiresIn: '7d'});
+  return jwtToken;
+}
+
+userSchema.methods.validatePassword = async function (password){
+  const user = this;
+  const isValidPassword = await bcrypt.compare(password, user.password);
+  return isValidPassword;
+}
+
+const User = mongoose.model("users", userSchema);
+
+module.exports = User;
